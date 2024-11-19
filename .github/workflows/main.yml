@@ -26,31 +26,41 @@ jobs:
       - name: Update SaludoSimple Lambda
         run: |
           echo "Updating Lambda function SaludoSimple..."
-          zip simple_greeting.zip lambdas/simple_greeting.py
+          cd lambdas
+          zip ../simple_greeting.zip simple_greeting.py
+          cd ..
           aws lambda update-function-code --function-name SaludoSimple --zip-file fileb://simple_greeting.zip
 
       - name: Update SaludoPersonalizado Lambda
         run: |
           echo "Updating Lambda function SaludoPersonalizado..."
-          zip custom_greeting.zip lambdas/custom_greeting.py
+          cd lambdas
+          zip ../custom_greeting.zip custom_greeting.py
+          cd ..
           aws lambda update-function-code --function-name SaludoPersonalizado --zip-file fileb://custom_greeting.zip
 
       - name: Update CalculadoraBasica Lambda
         run: |
           echo "Updating Lambda function CalculadoraBasica..."
-          zip basic_calculator.zip lambdas/basic_calculator.py
+          cd lambdas
+          zip ../basic_calculator.zip basic_calculator.py
+          cd ..
           aws lambda update-function-code --function-name CalculadoraBasica --zip-file fileb://basic_calculator.zip
 
       - name: Update ProcesamientoTexto Lambda
         run: |
           echo "Updating Lambda function ProcesamientoTexto..."
-          zip process_text.zip lambdas/process_text.py
+          cd lambdas
+          zip ../process_text.zip process_text.py
+          cd ..
           aws lambda update-function-code --function-name ProcesamientoTexto --zip-file fileb://process_text.zip
 
       - name: Update ConexionDynamoDB Lambda
         run: |
           echo "Updating Lambda function ConexionDynamoDB..."
-          zip dynamodb_connection.zip lambdas/dynamodb_connection.py
+          cd lambdas
+          zip ../dynamodb_connection.zip dynamodb_connection.py
+          cd ..
           aws lambda update-function-code --function-name ConexionDynamoDB --zip-file fileb://dynamodb_connection.zip
 
       - name: Check if API Gateway exists
