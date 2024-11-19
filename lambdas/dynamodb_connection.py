@@ -18,7 +18,9 @@ def lambda_handler(event, context):
     if not student_id.isdigit():
         return {
             "statusCode": 400,
-            "body": json.dumps({"error": "El parámetro 'id' debe de ser un número."}),
+            "body": json.dumps(
+                {"error": "El parámetro 'id' debe de ser un número entero."}
+            ),
         }
 
     try:
@@ -30,6 +32,9 @@ def lambda_handler(event, context):
                 "statusCode": 404,
                 "body": json.dumps({"error": "Estudiante no encontrado."}),
             }
+
+        item["age"] = int(item["age"])
+        item["id"] = int(item["id"])
 
         return {"statusCode": 200, "body": json.dumps(item)}
     except ClientError as e:
