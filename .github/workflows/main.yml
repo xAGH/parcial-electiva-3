@@ -1,0 +1,49 @@
+name: Deploy Lambdas
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Deploy SaludoSimple
+        run: |
+          zip simple_greeting.zip lambdas/simple_greeting.py
+          aws lambda update-function-code --function-name SaludoSimple --zip-file fileb://simple_greeting.zip
+
+      - name: Deploy SaludoPersonalizado
+        run: |
+          zip custom_greeting.zip lambdas/custom_greeting.py
+          aws lambda update-function-code --function-name SaludoPersonalizado --zip-file fileb://custom_greeting.zip
+
+      - name: Deploy CalculadoraBasica
+        run: |
+          zip basic_calculator.zip lambdas/basic_calculator.py
+          aws lambda update-function-code --function-name CalculadoraBasica --zip-file fileb://basic_calculator.zip
+
+      - name: Deploy ProcesamientoTexto
+        run: |
+          zip process_text.zip lambdas/process_text.py
+          aws lambda update-function-code --function-name ProcesamientoTexto --zip-file fileb://process_text.zip
+
+      - name: Deploy ConexionDynamoDB
+        run: |
+          zip dynamodb_connection.zip lambdas/dynamodb_connection.py
+          aws lambda update-function-code --function-name ConexionDynamoDB --zip-file fileb://dynamodb_connection.zip
