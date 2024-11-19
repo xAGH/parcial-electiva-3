@@ -1,4 +1,4 @@
-name: Deploy Lambdas
+name: Deploy Lambdas with API Gateway
 
 on:
   push:
@@ -23,28 +23,75 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Deploy SaludoSimple
+      - name: Deploy lambda SaludoSimple
         run: |
           zip simple_greeting.zip lambdas/simple_greeting.py
           aws lambda update-function-code --function-name SaludoSimple --zip-file fileb://simple_greeting.zip
 
-      - name: Deploy SaludoPersonalizado
+      - name: Deploy lambda SaludoPersonalizado
         run: |
           zip custom_greeting.zip lambdas/custom_greeting.py
           aws lambda update-function-code --function-name SaludoPersonalizado --zip-file fileb://custom_greeting.zip
 
-      - name: Deploy CalculadoraBasica
+      - name: Deploy lambda CalculadoraBasica
         run: |
           zip basic_calculator.zip lambdas/basic_calculator.py
           aws lambda update-function-code --function-name CalculadoraBasica --zip-file fileb://basic_calculator.zip
 
-      - name: Deploy ProcesamientoTexto
+      - name: Deploy lambda ProcesamientoTexto
         run: |
           zip process_text.zip lambdas/process_text.py
           aws lambda update-function-code --function-name ProcesamientoTexto --zip-file fileb://process_text.zip
 
-      - name: Deploy ConexionDynamoDB
+      - name: Deploy lambda ConexionDynamoDB
         run: |
           zip dynamodb_connection.zip lambdas/dynamodb_connection.py
           aws lambda update-function-code --function-name ConexionDynamoDB --zip-file fileb://dynamodb_connection.zip
           aws lambda update-function-configuration --function-name ConexionDynamoDB --role arn:aws:iam::717279706992:role/LambdaFullAccessToDynamoDb
+
+      - name: Create API Gateway
+        run: |
+          API_ID=$(aws apigatewayv2 create-api \
+            --name "LambdaAPI" \
+            --protocol-type HTTP \
+            --target arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:SaludoSimple \
+            --query 'ApiId' --output text)
+
+          echo "API ID: $API_ID"
+
+          aws apigatewayv2 create-route \
+            --api-id $API_ID \
+            --route-key "GET /saludo-simple" \
+            --target arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:SaludoSimple
+
+          aws apigatewayv2 create-route \
+            --api-id $API_ID \
+            --route-key "GET /saludo-personalizado" \
+            --target arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:SaludoPersonalizado
+
+          aws apigatewayv2 create-route \
+            --api-id $API_ID \
+            --route-key "GET /calculadora-basica" \
+            --target arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:CalculadoraBasica
+
+          aws apigatewayv2 create-route \
+            --api-id $API_ID \
+            --route-key "POST /procesamiento-texto" \
+            --target arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:ProcesamientoTexto
+
+          aws apigatewayv2 create-route \
+            --api-id $API_ID \
+            --route-key "GET /conexion-dynamodb" \
+            --target arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:ConexionDynamoDB
+
+      - name: Deploy API Gateway
+        run: |
+          aws apigatewayv2 create-deployment \
+            --api-id $API_ID \
+            --stage-name prod
+
+          API_URL=$(aws apigatewayv2 get-api \
+            --api-id $API_ID \
+            --query 'ApiEndpoint' --output text)
+
+          echo "API URL: $API_URL"
