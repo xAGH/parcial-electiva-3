@@ -15,8 +15,14 @@ def lambda_handler(event, context):
             "body": json.dumps({"error": "El parámetro 'id' es obligatorio."}),
         }
 
+    if not student_id.isdigit():
+        return {
+            "statusCode": 400,
+            "body": json.dumps({"error": "El parámetro 'id' debe de ser un número."}),
+        }
+
     try:
-        response = table.get_item(Key={"id": student_id})
+        response = table.get_item(Key={"id": int(student_id)})
         item = response.get("Item")
 
         if not item:
