@@ -36,62 +36,15 @@ jobs:
             aws lambda create-function --function-name SaludoSimple --runtime python3.9 --role arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/AWSLambdaBasicExecutionRole --handler simple_greeting.lambda_handler --zip-file fileb://simple_greeting.zip
           fi
 
-      - name: Deploy SaludoPersonalizado
-        run: |
-          function_exists=$(aws lambda get-function --function-name SaludoPersonalizado --query 'Configuration.FunctionName' --output text || echo 'not_found')
-          if [ "$function_exists" == "SaludoPersonalizado" ]; then
-            echo "Updating existing Lambda function SaludoPersonalizado..."
-            zip custom_greeting.zip lambdas/custom_greeting.py
-            aws lambda update-function-code --function-name SaludoPersonalizado --zip-file fileb://custom_greeting.zip
-          else
-            echo "Creating Lambda function SaludoPersonalizado..."
-            zip custom_greeting.zip lambdas/custom_greeting.py
-            aws lambda create-function --function-name SaludoPersonalizado --runtime python3.9 --role arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/AWSLambdaBasicExecutionRole --handler custom_greeting.lambda_handler --zip-file fileb://custom_greeting.zip
-          fi
-
-      - name: Deploy CalculadoraBasica
-        run: |
-          function_exists=$(aws lambda get-function --function-name CalculadoraBasica --query 'Configuration.FunctionName' --output text || echo 'not_found')
-          if [ "$function_exists" == "CalculadoraBasica" ]; then
-            echo "Updating existing Lambda function CalculadoraBasica..."
-            zip basic_calculator.zip lambdas/basic_calculator.py
-            aws lambda update-function-code --function-name CalculadoraBasica --zip-file fileb://basic_calculator.zip
-          else
-            echo "Creating Lambda function CalculadoraBasica..."
-            zip basic_calculator.zip lambdas/basic_calculator.py
-            aws lambda create-function --function-name CalculadoraBasica --runtime python3.9 --role arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/AWSLambdaBasicExecutionRole --handler basic_calculator.lambda_handler --zip-file fileb://basic_calculator.zip
-          fi
-
-      - name: Deploy ProcesamientoTexto
-        run: |
-          function_exists=$(aws lambda get-function --function-name ProcesamientoTexto --query 'Configuration.FunctionName' --output text || echo 'not_found')
-          if [ "$function_exists" == "ProcesamientoTexto" ]; then
-            echo "Updating existing Lambda function ProcesamientoTexto..."
-            zip process_text.zip lambdas/process_text.py
-            aws lambda update-function-code --function-name ProcesamientoTexto --zip-file fileb://process_text.zip
-          else
-            echo "Creating Lambda function ProcesamientoTexto..."
-            zip process_text.zip lambdas/process_text.py
-            aws lambda create-function --function-name ProcesamientoTexto --runtime python3.9 --role arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/AWSLambdaBasicExecutionRole --handler process_text.lambda_handler --zip-file fileb://process_text.zip
-          fi
-
-      - name: Deploy ConexionDynamoDB
-        run: |
-          function_exists=$(aws lambda get-function --function-name ConexionDynamoDB --query 'Configuration.FunctionName' --output text || echo 'not_found')
-          if [ "$function_exists" == "ConexionDynamoDB" ]; then
-            echo "Updating existing Lambda function ConexionDynamoDB..."
-            zip dynamodb_connection.zip lambdas/dynamodb_connection.py
-            aws lambda update-function-code --function-name ConexionDynamoDB --zip-file fileb://dynamodb_connection.zip
-          else
-            echo "Creating Lambda function ConexionDynamoDB..."
-            zip dynamodb_connection.zip lambdas/dynamodb_connection.py
-            aws lambda create-function --function-name ConexionDynamoDB --runtime python3.9 --role arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/AWSLambdaBasicExecutionRole --handler dynamodb_connection.lambda_handler --zip-file fileb://dynamodb_connection.zip
-          fi
-
       - name: Check if API Gateway exists
         run: |
+          # Obtener el listado de APIs
+          echo "Checking for existing API Gateway..."
+          API_RESPONSE=$(aws apigatewayv2 get-apis --output json)
+          echo "API Response: $API_RESPONSE"
+
           # Buscar el API Gateway por nombre
-          API_ID=$(aws apigatewayv2 get-apis --query 'Items[?Name==`LambdaAPI`].ApiId' --output text)
+          API_ID=$(echo $API_RESPONSE | jq -r '.Items[] | select(.Name == "LambdaAPI") | .ApiId')
 
           # Verificar si la respuesta está vacía o no
           if [ -z "$API_ID" ]; then
@@ -105,37 +58,98 @@ jobs:
             echo "API Gateway already exists with ID: $API_ID"
           fi
 
+      - name: Verify API_ID
+        run: |
+          echo "Verifying API_ID: $API_ID"
+          if [ -z "$API_ID" ]; then
+            echo "Error: API_ID is empty. Exiting."
+            exit 1
+          fi
+
+      - name: Create Integrations for Lambda Functions
+        run: |
+          echo "Creating integrations..."
+          # Crear integración para SaludoSimple
+          INTEGRATION_ID_SALUDO_SIMPLE=$(aws apigatewayv2 create-integration \
+            --api-id $API_ID \
+            --integration-type AWS_PROXY \
+            --integration-uri arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:SaludoSimple \
+            --payload-format-version 2.0 \
+            --query 'IntegrationId' --output text)
+          echo "SaludoSimple integration ID: $INTEGRATION_ID_SALUDO_SIMPLE"
+
+          # Crear integración para SaludoPersonalizado
+          INTEGRATION_ID_SALUDO_PERSONALIZADO=$(aws apigatewayv2 create-integration \
+            --api-id $API_ID \
+            --integration-type AWS_PROXY \
+            --integration-uri arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:SaludoPersonalizado \
+            --payload-format-version 2.0 \
+            --query 'IntegrationId' --output text)
+          echo "SaludoPersonalizado integration ID: $INTEGRATION_ID_SALUDO_PERSONALIZADO"
+
+          # Crear integración para CalculadoraBasica
+          INTEGRATION_ID_CALCULADORA_BASICA=$(aws apigatewayv2 create-integration \
+            --api-id $API_ID \
+            --integration-type AWS_PROXY \
+            --integration-uri arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:CalculadoraBasica \
+            --payload-format-version 2.0 \
+            --query 'IntegrationId' --output text)
+          echo "CalculadoraBasica integration ID: $INTEGRATION_ID_CALCULADORA_BASICA"
+
+          # Crear integración para ProcesamientoTexto
+          INTEGRATION_ID_PROCESAMIENTO_TEXTO=$(aws apigatewayv2 create-integration \
+            --api-id $API_ID \
+            --integration-type AWS_PROXY \
+            --integration-uri arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:ProcesamientoTexto \
+            --payload-format-version 2.0 \
+            --query 'IntegrationId' --output text)
+          echo "ProcesamientoTexto integration ID: $INTEGRATION_ID_PROCESAMIENTO_TEXTO"
+
+          # Crear integración para ConexionDynamoDB
+          INTEGRATION_ID_CONEXION_DYNAMODB=$(aws apigatewayv2 create-integration \
+            --api-id $API_ID \
+            --integration-type AWS_PROXY \
+            --integration-uri arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:ConexionDynamoDB \
+            --payload-format-version 2.0 \
+            --query 'IntegrationId' --output text)
+          echo "ConexionDynamoDB integration ID: $INTEGRATION_ID_CONEXION_DYNAMODB"
+
       - name: Create Routes for Lambda Functions
         run: |
-          API_ID=$(aws apigatewayv2 get-apis --query 'Items[?Name==`LambdaAPI`].ApiId' --output text)
+          echo "Creating routes..."
+
+          # Crear ruta para SaludoSimple
           aws apigatewayv2 create-route \
             --api-id $API_ID \
             --route-key "GET /saludo-simple" \
-            --target arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:SaludoSimple
+            --target "integrations/$INTEGRATION_ID_SALUDO_SIMPLE"
 
+          # Crear ruta para SaludoPersonalizado
           aws apigatewayv2 create-route \
             --api-id $API_ID \
             --route-key "GET /saludo-personalizado" \
-            --target arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:SaludoPersonalizado
+            --target "integrations/$INTEGRATION_ID_SALUDO_PERSONALIZADO"
 
+          # Crear ruta para CalculadoraBasica
           aws apigatewayv2 create-route \
             --api-id $API_ID \
             --route-key "GET /calculadora-basica" \
-            --target arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:CalculadoraBasica
+            --target "integrations/$INTEGRATION_ID_CALCULADORA_BASICA"
 
+          # Crear ruta para ProcesamientoTexto
           aws apigatewayv2 create-route \
             --api-id $API_ID \
             --route-key "POST /procesamiento-texto" \
-            --target arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:ProcesamientoTexto
+            --target "integrations/$INTEGRATION_ID_PROCESAMIENTO_TEXTO"
 
+          # Crear ruta para ConexionDynamoDB
           aws apigatewayv2 create-route \
             --api-id $API_ID \
             --route-key "GET /conexion-dynamodb" \
-            --target arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:ConexionDynamoDB
+            --target "integrations/$INTEGRATION_ID_CONEXION_DYNAMODB"
 
       - name: Deploy API Gateway
         run: |
-          API_ID=$(aws apigatewayv2 get-apis --query 'Items[?Name==`LambdaAPI`].ApiId' --output text)
           aws apigatewayv2 create-deployment \
             --api-id $API_ID \
             --stage-name prod
