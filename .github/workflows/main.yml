@@ -102,7 +102,7 @@ jobs:
       - name: Get Integration for SaludoSimple Lambda
         run: |
 
-          INTEGRATION_SALUDO_SIMPLE=$(aws apigatewayv2 get-integrations --api-id ${{ env.API_ID }} | jq -r '.Items[] | select(.IntegrationUri | contains("CalculadoraBasica")) | .IntegrationId')
+          INTEGRATION_SALUDO_SIMPLE=$(aws apigatewayv2 get-integrations --api-id ${{ env.API_ID }} | jq -r '.Items[] | select(.IntegrationUri | contains("SaludoSimple")) | .IntegrationId')
           echo "INTEGRATION_SALUDO_SIMPLE=$INTEGRATION_SALUDO_SIMPLE" >> $GITHUB_ENV
 
       - name: Get Integration for SaludoPersonalizado Lambda
