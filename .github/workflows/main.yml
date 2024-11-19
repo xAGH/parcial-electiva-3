@@ -53,6 +53,43 @@ jobs:
           zip dynamodb_connection.zip lambdas/dynamodb_connection.py
           aws lambda update-function-code --function-name ConexionDynamoDB --zip-file fileb://dynamodb_connection.zip
 
+      - name: Check if API Gateway exists
+        run: |
+          # Buscar el API Gateway por nombre
+          API_ID=$(aws apigatewayv2 get-apis --query 'Items[?Name==`LambdaAPI`].ApiId' --output text)
+
+          # Verificar si la respuesta está vacía o no
+          if [ -z "$API_ID" ]; then
+            echo "Error: API Gateway 'LambdaAPI' does not exist. Please create the API Gateway first."
+            exit 1
+          else
+            echo "API Gateway already exists with ID: $API_ID"
+          fi
+
+      - name: Get Route IDs for Lambda Functions
+        run: |
+          API_ID=$(aws apigatewayv2 get-apis --query 'Items[?Name==`LambdaAPI`].ApiId' --output text)
+
+          # Get route IDs for each Lambda function route
+          SALUDO_SIMPLE_ROUTE_ID=$(aws apigatewayv2 get-routes --api-id $API_ID --query 'Items[?RouteKey==`GET /saludo-simple`].RouteId' --output text)
+          SALUDO_PERSONALIZADO_ROUTE_ID=$(aws apigatewayv2 get-routes --api-id $API_ID --query 'Items[?RouteKey==`GET /saludo-personalizado`].RouteId' --output text)
+          CALCULADORA_BASICA_ROUTE_ID=$(aws apigatewayv2 get-routes --api-id $API_ID --query 'Items[?RouteKey==`GET /calculadora-basica`].RouteId' --output text)
+          PROCESAMIENTO_TEXTO_ROUTE_ID=$(aws apigatewayv2 get-routes --api-id $API_ID --query 'Items[?RouteKey==`POST /procesamiento-texto`].RouteId' --output text)
+          CONEXION_DYNAMODB_ROUTE_ID=$(aws apigatewayv2 get-routes --api-id $API_ID --query 'Items[?RouteKey==`GET /conexion-dynamodb`].RouteId' --output text)
+
+          echo "SaludoSimple Route ID: $SALUDO_SIMPLE_ROUTE_ID"
+          echo "SaludoPersonalizado Route ID: $SALUDO_PERSONALIZADO_ROUTE_ID"
+          echo "CalculadoraBasica Route ID: $CALCULADORA_BASICA_ROUTE_ID"
+          echo "ProcesamientoTexto Route ID: $PROCESAMIENTO_TEXTO_ROUTE_ID"
+          echo "ConexionDynamoDB Route ID: $CONEXION_DYNAMODB_ROUTE_ID"
+
+          # Save the route IDs for later use
+          echo "SALUDO_SIMPLE_ROUTE_ID=$SALUDO_SIMPLE_ROUTE_ID" >> $GITHUB_ENV
+          echo "SALUDO_PERSONALIZADO_ROUTE_ID=$SALUDO_PERSONALIZADO_ROUTE_ID" >> $GITHUB_ENV
+          echo "CALCULADORA_BASICA_ROUTE_ID=$CALCULADORA_BASICA_ROUTE_ID" >> $GITHUB_ENV
+          echo "PROCESAMIENTO_TEXTO_ROUTE_ID=$PROCESAMIENTO_TEXTO_ROUTE_ID" >> $GITHUB_ENV
+          echo "CONEXION_DYNAMODB_ROUTE_ID=$CONEXION_DYNAMODB_ROUTE_ID" >> $GITHUB_ENV
+
       - name: Update Routes for Lambda Functions
         run: |
           API_ID=$(aws apigatewayv2 get-apis --query 'Items[?Name==`LambdaAPI`].ApiId' --output text)
@@ -60,26 +97,31 @@ jobs:
           # Update existing routes for Lambda functions
           aws apigatewayv2 update-route \
             --api-id $API_ID \
+            --route-id ${{ env.SALUDO_SIMPLE_ROUTE_ID }} \
             --route-key "GET /saludo-simple" \
             --target arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:SaludoSimple
 
           aws apigatewayv2 update-route \
             --api-id $API_ID \
+            --route-id ${{ env.SALUDO_PERSONALIZADO_ROUTE_ID }} \
             --route-key "GET /saludo-personalizado" \
             --target arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:SaludoPersonalizado
 
           aws apigatewayv2 update-route \
             --api-id $API_ID \
+            --route-id ${{ env.CALCULADORA_BASICA_ROUTE_ID }} \
             --route-key "GET /calculadora-basica" \
             --target arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:CalculadoraBasica
 
           aws apigatewayv2 update-route \
             --api-id $API_ID \
+            --route-id ${{ env.PROCESAMIENTO_TEXTO_ROUTE_ID }} \
             --route-key "POST /procesamiento-texto" \
             --target arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:ProcesamientoTexto
 
           aws apigatewayv2 update-route \
             --api-id $API_ID \
+            --route-id ${{ env.CONEXION_DYNAMODB_ROUTE_ID }} \
             --route-key "GET /conexion-dynamodb" \
             --target arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:ConexionDynamoDB
 
