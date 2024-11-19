@@ -1,0 +1,208 @@
+{
+	"info": {
+		"_postman_id": "0fd2d093-d6dd-4600-9d24-aab76456ded5",
+		"name": "Parcial 3 electiva 3",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "27377737"
+	},
+	"item": [
+		{
+			"name": "Calculator",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://0tc3e2n2sg.execute-api.us-east-1.amazonaws.com/default/calculadora-basica?a=2&b=2&operador=%2B",
+					"protocol": "https",
+					"host": [
+						"0tc3e2n2sg",
+						"execute-api",
+						"us-east-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"default",
+						"calculadora-basica"
+					],
+					"query": [
+						{
+							"key": "a",
+							"value": "2"
+						},
+						{
+							"key": "b",
+							"value": "2"
+						},
+						{
+							"key": "operador",
+							"value": "%2B"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DynamoDB Connection",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://0tc3e2n2sg.execute-api.us-east-1.amazonaws.com/default/conexion-dynamodb?id=1",
+					"protocol": "https",
+					"host": [
+						"0tc3e2n2sg",
+						"execute-api",
+						"us-east-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"default",
+						"conexion-dynamodb"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Process Text",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"texto\": \"Alejo y Marlon\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://0tc3e2n2sg.execute-api.us-east-1.amazonaws.com/default/procesamiento-texto",
+					"protocol": "https",
+					"host": [
+						"0tc3e2n2sg",
+						"execute-api",
+						"us-east-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"default",
+						"procesamiento-texto"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Custom Greeting",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://0tc3e2n2sg.execute-api.us-east-1.amazonaws.com/default/saludo-personalizado?nombre=Alejo",
+					"protocol": "https",
+					"host": [
+						"0tc3e2n2sg",
+						"execute-api",
+						"us-east-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"default",
+						"saludo-personalizado"
+					],
+					"query": [
+						{
+							"key": "nombre",
+							"value": "Alejo"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Simple Greeting",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://0tc3e2n2sg.execute-api.us-east-1.amazonaws.com/default/saludo-simple",
+					"protocol": "https",
+					"host": [
+						"0tc3e2n2sg",
+						"execute-api",
+						"us-east-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"default",
+						"saludo-simple"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
