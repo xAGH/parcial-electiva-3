@@ -7,7 +7,7 @@ def lambda_handler(event, context):
     if not body:
         return {
             "statusCode": 400,
-            "body": {"error": "Se requiere un cuerpo JSON con el texto."},
+            "body": json.dumps({"error": "Se requiere un cuerpo JSON con el texto."}),
         }
 
     data = json.loads(body)
@@ -16,7 +16,7 @@ def lambda_handler(event, context):
     if not text:
         return {
             "statusCode": 400,
-            "body": {"error": "El campo 'texto' es obligatorio."},
+            "body": json.dumps({"error": "El campo 'texto' es obligatorio."}),
         }
 
     words = len(text.split())
@@ -24,9 +24,11 @@ def lambda_handler(event, context):
     text_upper = text.upper()
     return {
         "statusCode": 200,
-        "body": {
-            "palabras": words,
-            "caracteres": characters,
-            "texto_mayusculas": text_upper,
-        },
+        "body": json.dumps(
+            {
+                "palabras": words,
+                "caracteres": characters,
+                "texto_mayusculas": text_upper,
+            }
+        ),
     }

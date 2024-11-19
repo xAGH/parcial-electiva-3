@@ -1,3 +1,5 @@
+import json
+
 import boto3
 from botocore.exceptions import ClientError
 
@@ -10,7 +12,7 @@ def lambda_handler(event, context):
     if not student_id:
         return {
             "statusCode": 400,
-            "body": {"error": "El parámetro 'id' es obligatorio."},
+            "body": json.dumps({"error": "El parámetro 'id' es obligatorio."}),
         }
 
     try:
@@ -20,9 +22,9 @@ def lambda_handler(event, context):
         if not item:
             return {
                 "statusCode": 404,
-                "body": {"error": "Estudiante no encontrado."},
+                "body": json.dumps({"error": "Estudiante no encontrado."}),
             }
 
-        return {"statusCode": 200, "body": item}
+        return {"statusCode": 200, "body": json.dumps(item)}
     except ClientError as e:
-        return {"statusCode": 500, "body": {"error": str(e)}}
+        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
