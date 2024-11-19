@@ -99,54 +99,30 @@ jobs:
           echo "PROCESAMIENTO_TEXTO_ROUTE_ID=$PROCESAMIENTO_TEXTO_ROUTE_ID" >> $GITHUB_ENV
           echo "CONEXION_DYNAMODB_ROUTE_ID=$CONEXION_DYNAMODB_ROUTE_ID" >> $GITHUB_ENV
 
-      - name: Create Integration for SaludoSimple Lambda
+      - name: Get Integration for SaludoSimple Lambda
         run: |
-          INTEGRATION_SALUDO_SIMPLE=$(aws apigatewayv2 create-integration \
-            --api-id ${{ env.API_ID }} \
-            --integration-type AWS_PROXY \
-            --integration-uri arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:SaludoSimple \
-            --payload-format-version 2.0 \
-            --output text --query 'IntegrationId')
+
+          INTEGRATION_SALUDO_SIMPLE=$(aws apigatewayv2 get-integrations --api-id ${{ env.API_ID }} | jq -r '.Items[] | select(.IntegrationUri | contains("CalculadoraBasica")) | .IntegrationId')
           echo "INTEGRATION_SALUDO_SIMPLE=$INTEGRATION_SALUDO_SIMPLE" >> $GITHUB_ENV
 
-      - name: Create Integration for SaludoPersonalizado Lambda
+      - name: Get Integration for SaludoPersonalizado Lambda
         run: |
-          INTEGRATION_SALUDO_PERSONALIZADO=$(aws apigatewayv2 create-integration \
-            --api-id ${{ env.API_ID }} \
-            --integration-type AWS_PROXY \
-            --integration-uri arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:SaludoPersonalizado \
-            --payload-format-version 2.0 \
-            --output text --query 'IntegrationId')
+          INTEGRATION_SALUDO_PERSONALIZADO=$(aws apigatewayv2 get-integrations --api-id ${{ env.API_ID }} | jq -r '.Items[] | select(.IntegrationUri | contains("SaludoPersonalizado")) | .IntegrationId')
           echo "INTEGRATION_SALUDO_PERSONALIZADO=$INTEGRATION_SALUDO_PERSONALIZADO" >> $GITHUB_ENV
 
-      - name: Create Integration for CalculadoraBasica Lambda
+      - name: Get Integration for CalculadoraBasica Lambda
         run: |
-          INTEGRATION_CALCULADORA_BASICA=$(aws apigatewayv2 create-integration \
-            --api-id ${{ env.API_ID }} \
-            --integration-type AWS_PROXY \
-            --integration-uri arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:CalculadoraBasica \
-            --payload-format-version 2.0 \
-            --output text --query 'IntegrationId')
+          INTEGRATION_CALCULADORA_BASICA=$(aws apigatewayv2 get-integrations --api-id ${{ env.API_ID }} | jq -r '.Items[] | select(.IntegrationUri | contains("CalculadoraBasica")) | .IntegrationId')
           echo "INTEGRATION_CALCULADORA_BASICA=$INTEGRATION_CALCULADORA_BASICA" >> $GITHUB_ENV
 
-      - name: Create Integration for ProcesamientoTexto Lambda
+      - name: Get Integration for ProcesamientoTexto Lambda
         run: |
-          INTEGRATION_PROCESAMIENTO_TEXTO=$(aws apigatewayv2 create-integration \
-            --api-id ${{ env.API_ID }} \
-            --integration-type AWS_PROXY \
-            --integration-uri arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:ProcesamientoTexto \
-            --payload-format-version 2.0 \
-            --output text --query 'IntegrationId')
+          INTEGRATION_PROCESAMIENTO_TEXTO=$(aws apigatewayv2 get-integrations --api-id ${{ env.API_ID }} | jq -r '.Items[] | select(.IntegrationUri | contains("ProcesamientoTexto")) | .IntegrationId')
           echo "INTEGRATION_PROCESAMIENTO_TEXTO=$INTEGRATION_PROCESAMIENTO_TEXTO" >> $GITHUB_ENV
 
-      - name: Create Integration for ConexionDynamoDB Lambda
+      - name: Get Integration for ConexionDynamoDB Lambda
         run: |
-          INTEGRATION_CONEXION_DYNAMODB=$(aws apigatewayv2 create-integration \
-            --api-id ${{ env.API_ID }} \
-            --integration-type AWS_PROXY \
-            --integration-uri arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:ConexionDynamoDB \
-            --payload-format-version 2.0 \
-            --output text --query 'IntegrationId')
+          INTEGRATION_CONEXION_DYNAMODB=$(aws apigatewayv2 get-integrations --api-id ${{ env.API_ID }} | jq -r '.Items[] | select(.IntegrationUri | contains("ConexionDynamoDB")) | .IntegrationId')
           echo "INTEGRATION_CONEXION_DYNAMODB=$INTEGRATION_CONEXION_DYNAMODB" >> $GITHUB_ENV
 
       - name: Update Routes for Lambda Functions
