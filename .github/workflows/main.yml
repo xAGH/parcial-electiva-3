@@ -66,11 +66,11 @@ jobs:
       - name: Check if API Gateway exists
         run: |
           # Buscar el API Gateway por nombre
-          API_ID=$(aws apigatewayv2 get-apis --query 'Items[?Name==`LambdaAPI`].ApiId' --output text)
+          API_ID=$(aws apigatewayv2 get-apis --query 'Items[?Name==`LambdasParical3-API`].ApiId' --output text)
 
           # Verificar si la respuesta está vacía o no
           if [ -z "$API_ID" ]; then
-            echo "Error: API Gateway 'LambdaAPI' does not exist. Please create the API Gateway first."
+            echo "Error: API Gateway 'LambdasParical3-API' does not exist. Please create the API Gateway first."
             exit 1
           else
             echo "API Gateway already exists with ID: $API_ID"
