@@ -65,17 +65,16 @@ jobs:
           else
             echo "API Gateway already exists with ID: $API_ID"
           fi
+          echo "API_ID=$API_ID" >> $GITHUB_ENV
 
       - name: Get Route IDs for Lambda Functions
         run: |
-          API_ID=$(aws apigatewayv2 get-apis --query 'Items[?Name==`LambdaAPI`].ApiId' --output text)
-
           # Get route IDs for each Lambda function route
-          SALUDO_SIMPLE_ROUTE_ID=$(aws apigatewayv2 get-routes --api-id $API_ID --query 'Items[?RouteKey==`GET /saludo-simple`].RouteId' --output text)
-          SALUDO_PERSONALIZADO_ROUTE_ID=$(aws apigatewayv2 get-routes --api-id $API_ID --query 'Items[?RouteKey==`GET /saludo-personalizado`].RouteId' --output text)
-          CALCULADORA_BASICA_ROUTE_ID=$(aws apigatewayv2 get-routes --api-id $API_ID --query 'Items[?RouteKey==`GET /calculadora-basica`].RouteId' --output text)
-          PROCESAMIENTO_TEXTO_ROUTE_ID=$(aws apigatewayv2 get-routes --api-id $API_ID --query 'Items[?RouteKey==`POST /procesamiento-texto`].RouteId' --output text)
-          CONEXION_DYNAMODB_ROUTE_ID=$(aws apigatewayv2 get-routes --api-id $API_ID --query 'Items[?RouteKey==`GET /conexion-dynamodb`].RouteId' --output text)
+          SALUDO_SIMPLE_ROUTE_ID=$(aws apigatewayv2 get-routes --api-id ${{ env.API_ID }} --query 'Items[?RouteKey==`GET /saludo-simple`].RouteId' --output text)
+          SALUDO_PERSONALIZADO_ROUTE_ID=$(aws apigatewayv2 get-routes --api-id ${{ env.API_ID }} --query 'Items[?RouteKey==`GET /saludo-personalizado`].RouteId' --output text)
+          CALCULADORA_BASICA_ROUTE_ID=$(aws apigatewayv2 get-routes --api-id ${{ env.API_ID }} --query 'Items[?RouteKey==`GET /calculadora-basica`].RouteId' --output text)
+          PROCESAMIENTO_TEXTO_ROUTE_ID=$(aws apigatewayv2 get-routes --api-id ${{ env.API_ID }} --query 'Items[?RouteKey==`POST /procesamiento-texto`].RouteId' --output text)
+          CONEXION_DYNAMODB_ROUTE_ID=$(aws apigatewayv2 get-routes --api-id ${{ env.API_ID }} --query 'Items[?RouteKey==`GET /conexion-dynamodb`].RouteId' --output text)
 
           echo "SaludoSimple Route ID: $SALUDO_SIMPLE_ROUTE_ID"
           echo "SaludoPersonalizado Route ID: $SALUDO_PERSONALIZADO_ROUTE_ID"
@@ -90,50 +89,85 @@ jobs:
           echo "PROCESAMIENTO_TEXTO_ROUTE_ID=$PROCESAMIENTO_TEXTO_ROUTE_ID" >> $GITHUB_ENV
           echo "CONEXION_DYNAMODB_ROUTE_ID=$CONEXION_DYNAMODB_ROUTE_ID" >> $GITHUB_ENV
 
+      - name: Create Integration for SaludoSimple Lambda
+        run: |
+          INTEGRATION_SALUDO_SIMPLE=$(aws apigatewayv2 create-integration \
+            --api-id ${{ env.API_ID }} \
+            --integration-type AWS_PROXY \
+            --integration-uri arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:SaludoSimple \
+            --payload-format-version 2.0 \
+            --output text --query 'IntegrationId')
+          echo "INTEGRATION_SALUDO_SIMPLE=$INTEGRATION_SALUDO_SIMPLE" >> $GITHUB_ENV
+
+      - name: Create Integration for SaludoPersonalizado Lambda
+        run: |
+          INTEGRATION_SALUDO_PERSONALIZADO=$(aws apigatewayv2 create-integration \
+            --api-id ${{ env.API_ID }} \
+            --integration-type AWS_PROXY \
+            --integration-uri arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:SaludoPersonalizado \
+            --payload-format-version 2.0 \
+            --output text --query 'IntegrationId')
+          echo "INTEGRATION_SALUDO_PERSONALIZADO=$INTEGRATION_SALUDO_PERSONALIZADO" >> $GITHUB_ENV
+
+      - name: Create Integration for CalculadoraBasica Lambda
+        run: |
+          INTEGRATION_CALCULADORA_BASICA=$(aws apigatewayv2 create-integration \
+            --api-id ${{ env.API_ID }} \
+            --integration-type AWS_PROXY \
+            --integration-uri arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:CalculadoraBasica \
+            --payload-format-version 2.0 \
+            --output text --query 'IntegrationId')
+          echo "INTEGRATION_CALCULADORA_BASICA=$INTEGRATION_CALCULADORA_BASICA" >> $GITHUB_ENV
+
+      - name: Create Integration for ProcesamientoTexto Lambda
+        run: |
+          INTEGRATION_PROCESAMIENTO_TEXTO=$(aws apigatewayv2 create-integration \
+            --api-id ${{ env.API_ID }} \
+            --integration-type AWS_PROXY \
+            --integration-uri arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:ProcesamientoTexto \
+            --payload-format-version 2.0 \
+            --output text --query 'IntegrationId')
+          echo "INTEGRATION_PROCESAMIENTO_TEXTO=$INTEGRATION_PROCESAMIENTO_TEXTO" >> $GITHUB_ENV
+
+      - name: Create Integration for ConexionDynamoDB Lambda
+        run: |
+          INTEGRATION_CONEXION_DYNAMODB=$(aws apigatewayv2 create-integration \
+            --api-id ${{ env.API_ID }} \
+            --integration-type AWS_PROXY \
+            --integration-uri arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:ConexionDynamoDB \
+            --payload-format-version 2.0 \
+            --output text --query 'IntegrationId')
+          echo "INTEGRATION_CONEXION_DYNAMODB=$INTEGRATION_CONEXION_DYNAMODB" >> $GITHUB_ENV
+
       - name: Update Routes for Lambda Functions
         run: |
-          API_ID=$(aws apigatewayv2 get-apis --query 'Items[?Name==`LambdaAPI`].ApiId' --output text)
-
-          # Update existing routes for Lambda functions
+          # Update routes with the integration IDs
           aws apigatewayv2 update-route \
-            --api-id $API_ID \
+            --api-id ${{ env.API_ID }} \
             --route-id ${{ env.SALUDO_SIMPLE_ROUTE_ID }} \
             --route-key "GET /saludo-simple" \
-            --target arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:SaludoSimple
+            --target integrations/${{ env.INTEGRATION_SALUDO_SIMPLE }}
 
           aws apigatewayv2 update-route \
-            --api-id $API_ID \
+            --api-id ${{ env.API_ID }} \
             --route-id ${{ env.SALUDO_PERSONALIZADO_ROUTE_ID }} \
             --route-key "GET /saludo-personalizado" \
-            --target arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:SaludoPersonalizado
+            --target integrations/${{ env.INTEGRATION_SALUDO_PERSONALIZADO }}
 
           aws apigatewayv2 update-route \
-            --api-id $API_ID \
+            --api-id ${{ env.API_ID }} \
             --route-id ${{ env.CALCULADORA_BASICA_ROUTE_ID }} \
             --route-key "GET /calculadora-basica" \
-            --target arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:CalculadoraBasica
+            --target integrations/${{ env.INTEGRATION_CALCULADORA_BASICA }}
 
           aws apigatewayv2 update-route \
-            --api-id $API_ID \
+            --api-id ${{ env.API_ID }} \
             --route-id ${{ env.PROCESAMIENTO_TEXTO_ROUTE_ID }} \
             --route-key "POST /procesamiento-texto" \
-            --target arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:ProcesamientoTexto
+            --target integrations/${{ env.INTEGRATION_PROCESAMIENTO_TEXTO }}
 
           aws apigatewayv2 update-route \
-            --api-id $API_ID \
+            --api-id ${{ env.API_ID }} \
             --route-id ${{ env.CONEXION_DYNAMODB_ROUTE_ID }} \
             --route-key "GET /conexion-dynamodb" \
-            --target arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:ConexionDynamoDB
-
-      - name: Deploy API Gateway
-        run: |
-          API_ID=$(aws apigatewayv2 get-apis --query 'Items[?Name==`LambdaAPI`].ApiId' --output text)
-          aws apigatewayv2 create-deployment \
-            --api-id $API_ID \
-            --stage-name prod
-
-          API_URL=$(aws apigatewayv2 get-api \
-            --api-id $API_ID \
-            --query 'ApiEndpoint' --output text)
-
-          echo "API URL: $API_URL"
+            --target integrations/${{ env.INTEGRATION_CONEXION_DYNAMODB }}
