@@ -23,42 +23,91 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Deploy lambda SaludoSimple
+      - name: Deploy SaludoSimple
         run: |
-          zip simple_greeting.zip lambdas/simple_greeting.py
-          aws lambda update-function-code --function-name SaludoSimple --zip-file fileb://simple_greeting.zip
+          function_exists=$(aws lambda get-function --function-name SaludoSimple --query 'Configuration.FunctionName' --output text || echo 'not_found')
+          if [ "$function_exists" == "SaludoSimple" ]; then
+            echo "Updating existing Lambda function SaludoSimple..."
+            zip simple_greeting.zip lambdas/simple_greeting.py
+            aws lambda update-function-code --function-name SaludoSimple --zip-file fileb://simple_greeting.zip
+          else
+            echo "Creating Lambda function SaludoSimple..."
+            zip simple_greeting.zip lambdas/simple_greeting.py
+            aws lambda create-function --function-name SaludoSimple --runtime python3.9 --role arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/AWSLambdaBasicExecutionRole --handler simple_greeting.lambda_handler --zip-file fileb://simple_greeting.zip
+          fi
 
-      - name: Deploy lambda SaludoPersonalizado
+      - name: Deploy SaludoPersonalizado
         run: |
-          zip custom_greeting.zip lambdas/custom_greeting.py
-          aws lambda update-function-code --function-name SaludoPersonalizado --zip-file fileb://custom_greeting.zip
+          function_exists=$(aws lambda get-function --function-name SaludoPersonalizado --query 'Configuration.FunctionName' --output text || echo 'not_found')
+          if [ "$function_exists" == "SaludoPersonalizado" ]; then
+            echo "Updating existing Lambda function SaludoPersonalizado..."
+            zip custom_greeting.zip lambdas/custom_greeting.py
+            aws lambda update-function-code --function-name SaludoPersonalizado --zip-file fileb://custom_greeting.zip
+          else
+            echo "Creating Lambda function SaludoPersonalizado..."
+            zip custom_greeting.zip lambdas/custom_greeting.py
+            aws lambda create-function --function-name SaludoPersonalizado --runtime python3.9 --role arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/AWSLambdaBasicExecutionRole --handler custom_greeting.lambda_handler --zip-file fileb://custom_greeting.zip
+          fi
 
-      - name: Deploy lambda CalculadoraBasica
+      - name: Deploy CalculadoraBasica
         run: |
-          zip basic_calculator.zip lambdas/basic_calculator.py
-          aws lambda update-function-code --function-name CalculadoraBasica --zip-file fileb://basic_calculator.zip
+          function_exists=$(aws lambda get-function --function-name CalculadoraBasica --query 'Configuration.FunctionName' --output text || echo 'not_found')
+          if [ "$function_exists" == "CalculadoraBasica" ]; then
+            echo "Updating existing Lambda function CalculadoraBasica..."
+            zip basic_calculator.zip lambdas/basic_calculator.py
+            aws lambda update-function-code --function-name CalculadoraBasica --zip-file fileb://basic_calculator.zip
+          else
+            echo "Creating Lambda function CalculadoraBasica..."
+            zip basic_calculator.zip lambdas/basic_calculator.py
+            aws lambda create-function --function-name CalculadoraBasica --runtime python3.9 --role arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/AWSLambdaBasicExecutionRole --handler basic_calculator.lambda_handler --zip-file fileb://basic_calculator.zip
+          fi
 
-      - name: Deploy lambda ProcesamientoTexto
+      - name: Deploy ProcesamientoTexto
         run: |
-          zip process_text.zip lambdas/process_text.py
-          aws lambda update-function-code --function-name ProcesamientoTexto --zip-file fileb://process_text.zip
+          function_exists=$(aws lambda get-function --function-name ProcesamientoTexto --query 'Configuration.FunctionName' --output text || echo 'not_found')
+          if [ "$function_exists" == "ProcesamientoTexto" ]; then
+            echo "Updating existing Lambda function ProcesamientoTexto..."
+            zip process_text.zip lambdas/process_text.py
+            aws lambda update-function-code --function-name ProcesamientoTexto --zip-file fileb://process_text.zip
+          else
+            echo "Creating Lambda function ProcesamientoTexto..."
+            zip process_text.zip lambdas/process_text.py
+            aws lambda create-function --function-name ProcesamientoTexto --runtime python3.9 --role arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/AWSLambdaBasicExecutionRole --handler process_text.lambda_handler --zip-file fileb://process_text.zip
+          fi
 
-      - name: Deploy lambda ConexionDynamoDB
+      - name: Deploy ConexionDynamoDB
         run: |
-          zip dynamodb_connection.zip lambdas/dynamodb_connection.py
-          aws lambda update-function-code --function-name ConexionDynamoDB --zip-file fileb://dynamodb_connection.zip
-          aws lambda update-function-configuration --function-name ConexionDynamoDB --role arn:aws:iam::717279706992:role/LambdaFullAccessToDynamoDb
+          function_exists=$(aws lambda get-function --function-name ConexionDynamoDB --query 'Configuration.FunctionName' --output text || echo 'not_found')
+          if [ "$function_exists" == "ConexionDynamoDB" ]; then
+            echo "Updating existing Lambda function ConexionDynamoDB..."
+            zip dynamodb_connection.zip lambdas/dynamodb_connection.py
+            aws lambda update-function-code --function-name ConexionDynamoDB --zip-file fileb://dynamodb_connection.zip
+          else
+            echo "Creating Lambda function ConexionDynamoDB..."
+            zip dynamodb_connection.zip lambdas/dynamodb_connection.py
+            aws lambda create-function --function-name ConexionDynamoDB --runtime python3.9 --role arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/AWSLambdaBasicExecutionRole --handler dynamodb_connection.lambda_handler --zip-file fileb://dynamodb_connection.zip
+          fi
 
-      - name: Create API Gateway
+      - name: Check if API Gateway exists
         run: |
-          API_ID=$(aws apigatewayv2 create-api \
-            --name "LambdaAPI" \
-            --protocol-type HTTP \
-            --target arn:aws:lambda:${{ secrets.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:function:SaludoSimple \
-            --query 'ApiId' --output text)
+          # Buscar el API Gateway por nombre
+          API_ID=$(aws apigatewayv2 get-apis --query 'Items[?Name==`LambdaAPI`].ApiId' --output text)
 
-          echo "API ID: $API_ID"
+          # Verificar si la respuesta está vacía o no
+          if [ -z "$API_ID" ]; then
+            echo "API Gateway not found. Creating new API Gateway..."
+            API_ID=$(aws apigatewayv2 create-api \
+              --name "LambdaAPI" \
+              --protocol-type HTTP \
+              --query 'ApiId' --output text)
+            echo "New API created with ID: $API_ID"
+          else
+            echo "API Gateway already exists with ID: $API_ID"
+          fi
 
+      - name: Create Routes for Lambda Functions
+        run: |
+          API_ID=$(aws apigatewayv2 get-apis --query 'Items[?Name==`LambdaAPI`].ApiId' --output text)
           aws apigatewayv2 create-route \
             --api-id $API_ID \
             --route-key "GET /saludo-simple" \
@@ -86,6 +135,7 @@ jobs:
 
       - name: Deploy API Gateway
         run: |
+          API_ID=$(aws apigatewayv2 get-apis --query 'Items[?Name==`LambdaAPI`].ApiId' --output text)
           aws apigatewayv2 create-deployment \
             --api-id $API_ID \
             --stage-name prod
