@@ -47,3 +47,4 @@ jobs:
         run: |
           zip dynamodb_connection.zip lambdas/dynamodb_connection.py
           aws lambda update-function-code --function-name ConexionDynamoDB --zip-file fileb://dynamodb_connection.zip
+          aws lambda update-function-configuration --function-name ConexionDynamoDB --role arn:aws:iam::717279706992:role/LambdaFullAccessToDynamoDb
